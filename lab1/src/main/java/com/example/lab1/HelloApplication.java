@@ -7,6 +7,7 @@ import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Group;
 import javafx.scene.Scene;
+import javafx.scene.control.Label;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
@@ -27,6 +28,11 @@ public class HelloApplication extends Application
     private Rectangle player = new Rectangle(50, 50, Color.BLACK);
     private TargetThread targetThread1 = new TargetThread();
     private TargetThread targetThread2 = new TargetThread();
+    private Label scoreLabel = new Label("Score: 0");
+    private Label shootsLabel = new Label("Shoots: 0");
+
+    private int score = 0;
+    private int shoots = 0;
 
     private void TargetInit()
     {
@@ -34,18 +40,31 @@ public class HelloApplication extends Application
         targetThread2.SetTarget(target2, 400, 200, 10);
     }
 
+    private void RefillTarget()
+    {
+        board.getChildren().addAll(target1, target2);
+        target1.relocate(500, 200);
+        target2.relocate(400, 200);
+        targetThread1.resume();
+        targetThread2.resume();
+        score+=1;
+    }
+
     private void OnHitChec()
     {
         if (player.getBoundsInParent().intersects(target1.getBoundsInParent()))
         {
-            targetThread1.stop();
             board.getChildren().remove(target1);
+            targetThread1.suspend();
         }
         if (player.getBoundsInParent().intersects(target2.getBoundsInParent()))
         {
-            targetThread2.stop();
+            targetThread2.suspend();
             board.getChildren().remove(target2);
-
+        }
+        if(!board.getChildren().contains(target1) && !board.getChildren().contains(target2) && player.getLayoutX() == 10)
+        {
+            RefillTarget();
         }
     }
 
@@ -53,7 +72,9 @@ public class HelloApplication extends Application
     public void start(Stage stage) throws IOException
     {
         board = new Group();
-        board.getChildren().addAll(player, target1, target2);
+        board.getChildren().addAll(player, target1, target2, scoreLabel, shootsLabel);
+        shootsLabel.relocate(10, 10);
+        scoreLabel.relocate(10, 30);
         Scene scene = new Scene(board, 600, 400, Color.WHITE);
         player.relocate(10, 200);
         stage.setTitle("Lab1");
@@ -63,6 +84,7 @@ public class HelloApplication extends Application
                 switch (keyEvent.getCode())
                 {
                     case SPACE:
+                        shoots+=1;
                         PlayerThread playerThread = new PlayerThread();
                         playerThread.SetPlayer(player);
                         if(!playerThread.isAlive()) {
@@ -77,6 +99,8 @@ public class HelloApplication extends Application
         AnimationTimer timer = new AnimationTimer() {
             @Override
             public void handle(long l) {
+                shootsLabel.setText("Shoots: "+shoots);
+                scoreLabel.setText("Score: "+score);
                 OnHitChec();
             }
         };
